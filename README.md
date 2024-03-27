@@ -9,6 +9,7 @@ Modifies the export.py class within the robin_stocks package to enable exporting
 Provides a streamlined process for users to view and manage their dividend transactions on Robinhood.
 
 To run: (only tested for windows)
+
 git clone https://github.com/James-Day/Robinhood-Dividend-Exporter.git
 
 cd Robinhood-Dividend-Exporter
