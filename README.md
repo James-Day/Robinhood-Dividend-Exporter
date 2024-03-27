@@ -1,6 +1,6 @@
 Description:
 
-This repository utilizes the robin_stocks package to extract dividend information from your Robinhood account and export it to a CSV file. The export.py class has been modified to include functionality for exporting dividends, enabling users to conveniently view all dividend transactions within their Robinhood account.
+This repository utilizes the robin_stocks package to extract dividend information from your Robinhood account and export it to a CSV file. The 'export.py' class has been modified to include functionality for exporting dividends, enabling users to conveniently view all dividend transactions within their Robinhood account.
 
 Features:
 
