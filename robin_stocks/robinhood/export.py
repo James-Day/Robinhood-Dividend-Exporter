@@ -94,7 +94,6 @@ def export_completed_stock_orders(dir_path, file_name=None):
 def export_dividends(dir_path, file_name=None):
     file_path = create_absolute_csv(dir_path, file_name, 'dividends')
     all_dividends = get_dividends()
-    print(all_dividends)
     with open(file_path, 'w', newline='') as f:
         csv_writer = writer(f)
         csv_writer.writerow([
