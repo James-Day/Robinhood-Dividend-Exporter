@@ -4,7 +4,8 @@ Using the obtained dividend information, the program utilizes the openpyxl libra
 
 This project provides a convenient way to retrieve dividend data from Robinhood and export it to an Excel document for further analysis or record-keeping purposes.
 
-To run: (only tested for Windows)
+
+**To run: (only tested for Windows)**
 
 git clone https://github.com/James-Day/Robinhood-Dividend-Exporter.git
 
