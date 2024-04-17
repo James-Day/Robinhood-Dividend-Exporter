@@ -1,19 +1,18 @@
-Description:
+This Python project leverages the Robinhood API through the robin_stocks library to retrieve dividend information. The program prompts the user for their Robinhood username and password, as well as a filename for the Excel document where the dividend data will be exported.
 
-This repository utilizes the robin_stocks package to extract dividend information from your Robinhood account and export it to a CSV file. The 'export.py' class has been modified to include functionality for exporting dividends, enabling users to conveniently view all dividend transactions within their Robinhood account.
+Using the obtained dividend information, the program utilizes the openpyxl library to export the data to an Excel document. The dependencies required for running the project are listed in the included requirements.txt file, which can be easily installed using the command pip install -r requirements.txt.
 
-Features:
+This project provides a convenient way to retrieve dividend data from Robinhood and export it to an Excel document for further analysis or record-keeping purposes.
 
-Extracts dividend information from Robinhood accounts.
-Modifies the export.py class within the robin_stocks package to enable exporting dividends to a CSV file.
-Provides a streamlined process for users to view and manage their dividend transactions on Robinhood.
 
-To run: (only tested for windows)
+**To run: (only tested for Windows)**
 
 git clone https://github.com/James-Day/Robinhood-Dividend-Exporter.git
 
 cd Robinhood-Dividend-Exporter
 
+pip install -r requirements.txt (best to use a virtual env)
+
 python robin.py
 
-(the csv file should now be on your desktop)
+(the excel file should now be on your desktop)
