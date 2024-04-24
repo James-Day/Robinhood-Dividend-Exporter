@@ -3,6 +3,9 @@ import os
 from openpyxl import Workbook, worksheet, load_workbook
 from csv import writer
 from datetime import datetime
+import sys
+from yahooquery import Ticker
+
 
 def createXLSX(path, file_name=None):
     if file_name == None:
@@ -61,27 +64,40 @@ def export_dividends(dir_path, file_name=None):
     workbook.save(file_path)
 
 @robin.helper.login_required
-def export_stocks(dir_path, file_name=None):
+def export_stocks(dir_path, file_name=None): #find out what is so slow about this function, I believe I need to do calls async
     file_path = dir_path + "\\" + file_name
     workbook = load_workbook(filename=file_path)
     stock_sheet = None
+    sector_sheet = None
     for worksheet in workbook.worksheets: # change this to seperate function 
         if worksheet.title == 'Stock Charts':
           stock_sheet = worksheet  
     if stock_sheet == None:
         stock_sheet = workbook.create_sheet(title="Stock Charts")  
+        
+    for worksheet in workbook.worksheets: # change this to seperate function 
+        if worksheet.title == 'Sector Weights':
+          sector_sheet = worksheet  
+    if sector_sheet == None:
+        sector_sheet = workbook.create_sheet(title="Sector Weights") # make these constant variables at the top of the file
 
-    for row in range(2, stock_sheet.max_row + 1):
+    for row in range(2, stock_sheet.max_row + 1): # make this a function
         for column in range(1, stock_sheet.max_column + 1):
             stock_sheet.cell(row=row, column=column).value = None
+
+    for row in range(2, sector_sheet.max_row + 1): # make this a function
+        for column in range(1, sector_sheet.max_column + 1):
+            sector_sheet.cell(row=row, column=column).value = None
 
     stocks = robin.get_open_stock_positions()
 
     row_index = 2 #start at row 2
     portfolio_value = 0
     for stock in stocks:
-        portfolio_value += float (robin.get_latest_price(stock['symbol'])[0]) * float (stock['quantity'])
+        portfolio_value += float (robin.get_latest_price(stock['symbol'])[0]) * float (stock['quantity']) #change so latest price is only called once.
     
+    stocks = sorted(stocks, key=lambda x: float(robin.get_latest_price(x['symbol'])[0]) * float(x['quantity']), reverse=True)
+    sector_totals = {}
     for stock in stocks:
         total_position = float (robin.get_latest_price(stock['symbol'])[0]) * float (stock['quantity'])
         row_data = [
@@ -89,16 +105,41 @@ def export_stocks(dir_path, file_name=None):
             float(stock['quantity']),
             float(stock['average_buy_price']),
             total_position,
-            portfolio_value / 
         ]
         for col, value in enumerate(row_data, start=1):
-            worksheet.cell(row=row_index, column=col).value = value
+            stock_sheet.cell(row=row_index, column=col).value = value
         row_index += 1
+        t = Ticker(stock['symbol'])
+        #print(t.asset_profile[stock['symbol']])
+        print( "Working on: " + stock['symbol'])
+        stock_sector_weights = {}
+        if 'sector' in t.asset_profile[stock['symbol']]:
+            stock_sector_weights = {t.asset_profile[stock['symbol']]['sector'] : 1}
+        else:
+            stock_sector_weights = t.fund_sector_weightings.to_dict(orient='dict')[stock['symbol']]
 
+        for sector, weight in stock_sector_weights.items():
+            refined_sector = sector.replace("_", " ").lower()
+            if refined_sector == 'realestate':
+                refined_sector = "real estate"
+            sector_totals[refined_sector] = sector_totals.get(refined_sector, 0) + total_position * weight
+    row_index = 2
+    
+    
+    sectors = sorted(sector_totals.items(), key=lambda x: x[1], reverse = True) # sort by value
+    for sector, total in sectors:
+        sector_sheet.cell(row = row_index, column = 1).value = sector
+        sector_sheet.cell(row = row_index, column = 2).value = total
+        sector_sheet.cell(row = row_index, column = 3).value = (total / portfolio_value) # Find way to change to percent
+        row_index += 1
+    
+    
     workbook.save(file_path)
 
-
-file_name = input("enterName of your dividend excel doc (including .xlsx) or hit enter for default name: ")
+args = sys.argv
+file_name = None
+if len(args) > 1:
+    file_name =  args[1]
 if file_name == "" or file_name == None:
     file_name = "myDividends.xlsx"
 
@@ -108,8 +149,9 @@ if not os.path.exists(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop\\" + file_
     print("Creating Excel Document")
     createXLSX(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop", file_name)
 
+#add error protection if file is open
 print("Exporting dividends, please wait. Do not open the excel file until complete.")
-export_dividends(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop", file_name)
+#export_dividends(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop", file_name)
 print("Exporting stock info, please wait. Do not open the excel file until complete.")
 export_stocks(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop", file_name)
 print("Portfolio export complete!")
