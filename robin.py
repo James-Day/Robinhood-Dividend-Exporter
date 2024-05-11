@@ -82,46 +82,55 @@ def export_dividends(dir_path, file_name=None):
 def export_stocks(dir_path, file_name=None): 
     file_path = dir_path + "\\" + file_name
     workbook = load_workbook(filename=file_path)
-    
     stock_sheet = find_sheet("Stock Charts", workbook)
-    sector_sheet = find_sheet('Sector Weights', workbook)
-
     if stock_sheet == None:
         stock_sheet = workbook.create_sheet(title="Stock Charts")  
-        
-    if sector_sheet == None:
-        sector_sheet = workbook.create_sheet(title="Sector Weights") # make these constant variables at the top of the file
-
     clear_excel_sheet(stock_sheet)
-    clear_excel_sheet(sector_sheet)
-
     stocks = robin.get_open_stock_positions()
     row_index = 2 #start at row 2
-    portfolio_value = 0
 
     stock_tickers = []
     for stock in stocks:
         stock_tickers.append(stock['symbol'])
-    latest_prices = robin.get_latest_price(stock_tickers)
-    latest_prices_dict = dict(zip(stock_tickers, latest_prices))
-    for i in range(len(stocks)):
-        portfolio_value += float (latest_prices[i]) * float (stocks[i]['quantity'])
-    
-    stocks = sorted(stocks, key=lambda x: float (latest_prices_dict[x['symbol']]) * float(x['quantity']), reverse=True)
-    sector_totals = {}
 
-    for i in range(len(stocks)):
-        total_position = float (latest_prices_dict[stocks[i]['symbol']]) * float (stocks[i]['quantity'])
+    stocks = sorted(stocks, key=lambda x: float (x['average_buy_price']) * float(x['quantity']), reverse=True)
+
+    for stock in stocks:
+        total_position = float (stock['average_buy_price']) * float (stock['quantity'])
         row_data = [
-            stocks[i]['symbol'],
-            float(stocks[i]['quantity']),
-            float(stocks[i]['average_buy_price']),
+            stock['symbol'],
+            float(stock['quantity']),
+            float(stock['average_buy_price']),
             total_position,
         ]
         for col, value in enumerate(row_data, start=1):
             stock_sheet.cell(row=row_index, column=col).value = value
         row_index += 1
-        cur_ticker_symbol = stocks[i]['symbol']
+    workbook.save(file_path)
+
+@robin.helper.login_required
+def export_sectors(dir_path, file_name=None):
+    file_path = dir_path + "\\" + file_name
+    workbook = load_workbook(filename=file_path)
+    sector_sheet = find_sheet('Sector Weights', workbook)
+    if sector_sheet == None:
+        sector_sheet = workbook.create_sheet(title="Sector Weights") # make these constant variables at the top of the file
+    clear_excel_sheet(sector_sheet)
+
+    stocks = robin.get_open_stock_positions()
+    stock_tickers = []
+    for stock in stocks:
+        stock_tickers.append(stock['symbol'])
+    latest_prices = robin.get_latest_price(stock_tickers)
+    portfolio_value = 0
+    for i in range(len(stocks)):
+        portfolio_value += float (latest_prices[i]) * float (stocks[i]['quantity'])
+    
+    sector_totals = {}
+
+    for stock in stocks:
+        total_position = float (stock['average_buy_price']) * float (stock['quantity'])
+        cur_ticker_symbol = stock['symbol']
         t = Ticker(cur_ticker_symbol)
         print( "Working on: " + cur_ticker_symbol)
         stock_sector_weights = {}
@@ -132,7 +141,7 @@ def export_stocks(dir_path, file_name=None):
         for sector, weight in stock_sector_weights.items():
             refined_sector = clean_sector_data(sector)
             sector_totals[refined_sector] = sector_totals.get(refined_sector, 0) + total_position * weight
-
+    
     row_index = 2
     sectors = sorted(sector_totals.items(), key=lambda x: x[1], reverse = True) # sort by value
     for sector, total in sectors:
@@ -141,9 +150,6 @@ def export_stocks(dir_path, file_name=None):
         sector_sheet.cell(row = row_index, column = 3).value = (total / portfolio_value) # Find way to change to percent
         row_index += 1
     workbook.save(file_path)
-
-def export_sectors(dir_path, file_name=None):
-    print("not finished")
     
 def main():
     args = sys.argv
@@ -155,16 +161,18 @@ def main():
 
     login = robin.login()
 
-    if not os.path.exists(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop\\" + file_name):
+    user = os.getlogin()
+    if not os.path.exists(f"C:\\Users\\{user}\\OneDrive\\Desktop\\" + file_name):
         print("Creating Excel Document")
-        createXLSX(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop", file_name)
+        createXLSX(f"C:\\Users\\{user}\\OneDrive\\Desktop", file_name)
 
     #add error protection if file is open
     print("Exporting dividends, please wait. Do not open the excel file until complete.")
-    #export_dividends(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop", file_name)
+    export_dividends(f"C:\\Users\\{user}\\OneDrive\\Desktop", file_name)
     print("Exporting stock info, please wait. Do not open the excel file until complete.")
-    export_stocks(f"C:\\Users\\{os.getlogin()}\\OneDrive\\Desktop", file_name)
-    print("running tests")
+    export_stocks(f"C:\\Users\\{user}\\OneDrive\\Desktop", file_name)
+    print("Exporting Sector info, please wait. Do not open the excel file until complete.")
+    export_sectors(f"C:\\Users\\{user}\\OneDrive\\Desktop", file_name)
     print("Portfolio export complete!")
 
 
