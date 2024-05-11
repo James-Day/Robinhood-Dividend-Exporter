@@ -37,7 +37,12 @@ def find_sheet(sheet_name, workbook):
         if worksheet.title == sheet_name:
             return worksheet  
     return None    
-      
+
+def clear_excel_sheet(excel_sheet):    
+    for row in range(2, excel_sheet.max_row + 1):
+        for column in range(1, excel_sheet.max_column + 1):
+            excel_sheet.cell(row=row, column=column).value = None
+
 @robin.helper.login_required
 def export_dividends(dir_path, file_name=None):
 
@@ -51,9 +56,7 @@ def export_dividends(dir_path, file_name=None):
 
     all_dividends = robin.get_dividends()
     
-    for row in range(2, dividend_sheet.max_row + 1): # seperate function
-        for column in range(1, dividend_sheet.max_column + 1):
-            dividend_sheet.cell(row=row, column=column).value = None
+    clear_excel_sheet(dividend_sheet)
 
     row_index = 2 #start appending at row 2
     for dividend in all_dividends:         
@@ -76,7 +79,7 @@ def export_dividends(dir_path, file_name=None):
     workbook.save(file_path)
 
 @robin.helper.login_required
-def export_stocks(dir_path, file_name=None): #find out what is so slow about this function, I believe I need to do calls async
+def export_stocks(dir_path, file_name=None): 
     file_path = dir_path + "\\" + file_name
     workbook = load_workbook(filename=file_path)
     
@@ -89,20 +92,13 @@ def export_stocks(dir_path, file_name=None): #find out what is so slow about thi
     if sector_sheet == None:
         sector_sheet = workbook.create_sheet(title="Sector Weights") # make these constant variables at the top of the file
 
-    for row in range(2, stock_sheet.max_row + 1): # make this a function
-        for column in range(1, stock_sheet.max_column + 1):
-            stock_sheet.cell(row=row, column=column).value = None
-
-    for row in range(2, sector_sheet.max_row + 1): # make this a function
-        for column in range(1, sector_sheet.max_column + 1):
-            sector_sheet.cell(row=row, column=column).value = None
+    clear_excel_sheet(stock_sheet)
+    clear_excel_sheet(sector_sheet)
 
     stocks = robin.get_open_stock_positions()
-
     row_index = 2 #start at row 2
     portfolio_value = 0
 
-    stocks = robin.get_open_stock_positions()
     stock_tickers = []
     for stock in stocks:
         stock_tickers.append(stock['symbol'])
