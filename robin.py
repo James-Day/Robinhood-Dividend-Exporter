@@ -93,10 +93,13 @@ def export_stocks(dir_path, file_name=None):
     for stock in stocks:
         stock_tickers.append(stock['symbol'])
 
-    stocks = sorted(stocks, key=lambda x: float (x['average_buy_price']) * float(x['quantity']), reverse=True)
+    latest_prices = robin.get_latest_price(stock_tickers)
+    latest_prices_dict = dict(zip(stock_tickers, latest_prices))
+
+    stocks = sorted(stocks, key=lambda x: float (latest_prices_dict[x['symbol']]) * float(x['quantity']), reverse=True)
 
     for stock in stocks:
-        total_position = float (stock['average_buy_price']) * float (stock['quantity'])
+        total_position = float (latest_prices_dict[stock['symbol']]) * float (stock['quantity'])
         row_data = [
             stock['symbol'],
             float(stock['quantity']),
@@ -122,6 +125,7 @@ def export_sectors(dir_path, file_name=None):
     for stock in stocks:
         stock_tickers.append(stock['symbol'])
     latest_prices = robin.get_latest_price(stock_tickers)
+    latest_prices_dict = dict(zip(stock_tickers, latest_prices))
     portfolio_value = 0
     for i in range(len(stocks)):
         portfolio_value += float (latest_prices[i]) * float (stocks[i]['quantity'])
@@ -129,7 +133,7 @@ def export_sectors(dir_path, file_name=None):
     sector_totals = {}
 
     for stock in stocks:
-        total_position = float (stock['average_buy_price']) * float (stock['quantity'])
+        total_position = float (latest_prices_dict[stock['symbol']]) * float (stock['quantity'])
         cur_ticker_symbol = stock['symbol']
         t = Ticker(cur_ticker_symbol)
         print( "Working on: " + cur_ticker_symbol)
@@ -159,7 +163,7 @@ def main():
     if file_name == "" or file_name == None:
         file_name = "myDividends.xlsx"
 
-    login = robin.login()
+    robin.login()
 
     user = os.getlogin()
     if not os.path.exists(f"C:\\Users\\{user}\\OneDrive\\Desktop\\" + file_name):
